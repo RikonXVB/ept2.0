@@ -112,21 +112,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         const searchInput = document.getElementById('searchInput');
         const searchButton = document.querySelector('.search-button');
 
-        searchInput?.addEventListener('input', searchAnime);
-        searchButton?.addEventListener('click', searchAnime);
-        searchInput?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                searchAnime();
-            }
-        });
+        if (searchInput && searchButton) {
+            searchInput.addEventListener('input', searchAnime);
+            searchButton.addEventListener('click', searchAnime);
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    searchAnime();
+                }
+            });
+        }
 
-        // Инициализируем фильтры
+        // Сначала загружаем фильтры
         await initializeFilters();
         
-        // Загружаем начальные данные
+        // Затем загружаем данные
         await loadPopularAnime(1);
     } catch (error) {
         console.error('Initialization error:', error);
+        const container = document.querySelector('.anime-grid');
+        if (container) {
+            container.innerHTML = `
+                <div class="error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Ошибка при инициализации: ${error.message}
+                </div>
+            `;
+        }
     }
 });
 
@@ -369,50 +380,32 @@ loadPopularAnime(1);
 
 // Функция для получения заголовков API
 function getApiHeaders() {
-    const headers = {
+    return {
         'Accept': 'application/json',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         'Origin': 'https://www.anilibria.tv',
         'Referer': 'https://www.anilibria.tv/',
         'Api-Version': '3.0',
         'Connection': 'keep-alive',
-        'Cache-Control': 'no-cache',
-        'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
+        'Cache-Control': 'no-cache'
     };
-
-    // Добавляем CORS заголовки если не локальный хост
-    if (window.location.hostname !== 'localhost') {
-        headers['Access-Control-Allow-Origin'] = '*';
-        headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS';
-        headers['Access-Control-Allow-Headers'] = 'Content-Type, Api-Version';
-    }
-
-    return headers;
 }
 
 // Добавим обработку ошибок для всех fetch запросов
 async function fetchWithErrorHandling(url, options = {}) {
     try {
-        console.log('Fetching URL:', url); // Для отладки
+        console.log('Fetching URL:', url);
         
         const response = await fetch(url, {
             ...options,
             headers: {
                 ...getApiHeaders(),
                 ...(options.headers || {})
-            },
-            mode: 'cors',
-            credentials: 'omit'
+            }
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error('API Error:', {
-                status: response.status,
-                statusText: response.statusText,
-                errorText
-            });
-            throw new Error(`API ответил с ошибкой: ${response.status} ${errorText}`);
+            throw new Error(`API ответил с ошибкой: ${response.status}`);
         }
 
         return response;
