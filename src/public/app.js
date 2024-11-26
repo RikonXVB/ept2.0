@@ -23,6 +23,11 @@ async function loadPopularAnime(page = 1) {
         const response = await fetch(`${API_BASE_URL}/anime/popular?page=${page}`, {
             headers: getApiHeaders()
         });
+        
+        if (!response.ok) {
+            throw new Error(`API ответил с ошибкой: ${response.status}`);
+        }
+
         const data = await response.json();
         
         if (data.error) {
@@ -35,7 +40,6 @@ async function loadPopularAnime(page = 1) {
             container.appendChild(card);
         });
 
-        // Обновляем флаг наличия следующей страницы
         hasMore = data.hasNextPage;
         currentPage = page;
         
@@ -45,7 +49,7 @@ async function loadPopularAnime(page = 1) {
             container.innerHTML = `
                 <div class="error">
                     <i class="fas fa-exclamation-circle"></i>
-                    Произошла ошибка при загрузке
+                    ${error.message || 'Произошла ошибка при загрузке'}
                 </div>
             `;
         }
@@ -259,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Обновим список сезонов
     const seasons = [
-        { code: 1, name: 'Зима' },
+        { code: 1, name: 'З��ма' },
         { code: 2, name: 'Весна' },
         { code: 3, name: 'Лето' },
         { code: 4, name: 'Осень' }
@@ -364,19 +368,36 @@ loadPopularAnime(1);
 
 // Функция для получения заголовков API
 function getApiHeaders() {
-  return {
-    'Accept': 'application/json',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-    'Origin': 'https://www.anilibria.tv',
-    'Referer': 'https://www.anilibria.tv/',
-    'Api-Version': '3.0',
-    'Connection': 'keep-alive',
-    'Cache-Control': 'no-cache',
-    'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
-    'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120"',
-    'sec-ch-ua-mobile': '?0',
-    'sec-ch-ua-platform': '"Windows"'
-  };
+    return {
+        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Origin': window.location.origin,
+        'Referer': window.location.origin,
+        'Api-Version': '3.0',
+        'Cache-Control': 'no-cache'
+    };
+}
+
+// Добавим обработку ошибок для всех fetch запросов
+async function fetchWithErrorHandling(url, options = {}) {
+    try {
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                ...getApiHeaders(),
+                ...(options.headers || {})
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`API ответил с ошибкой: ${response.status}`);
+        }
+
+        return response;
+    } catch (error) {
+        console.error('Fetch error:', error);
+        throw error;
+    }
 }
 
 // Используйте эти заголовки во всех fetch запросах
