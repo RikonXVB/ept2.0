@@ -385,9 +385,7 @@ function getApiHeaders() {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         'Origin': 'https://www.anilibria.tv',
         'Referer': 'https://www.anilibria.tv/',
-        'Api-Version': '3.0',
-        'Connection': 'keep-alive',
-        'Cache-Control': 'no-cache'
+        'Api-Version': '3.0'
     };
 }
 
@@ -401,10 +399,17 @@ async function fetchWithErrorHandling(url, options = {}) {
             headers: {
                 ...getApiHeaders(),
                 ...(options.headers || {})
-            }
+            },
+            mode: 'cors'
         });
 
         if (!response.ok) {
+            const errorText = await response.text();
+            console.error('API Error:', {
+                status: response.status,
+                statusText: response.statusText,
+                errorText
+            });
             throw new Error(`API ответил с ошибкой: ${response.status}`);
         }
 
