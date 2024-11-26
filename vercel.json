@@ -1,37 +1,47 @@
 {
-  "buildCommand": "bun run build",
-  "devCommand": "bun run dev",
-  "installCommand": "bun install",
-  "framework": null,
-  "outputDirectory": ".",
-  "functions": {
-    "api/**/*": {
-      "runtime": "nodejs18.x"
-    }
-  },
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/proxy/(.*)", "destination": "/api/proxy/$1" },
-    { "source": "/anime/(.*)", "destination": "/src/public/anime.html" },
-    { "source": "/(.*)", "destination": "/src/public/$1" }
-  ],
-  "headers": [
+  "version": 2,
+  "builds": [
     {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "*"
-        }
-      ]
+      "src": "src/index.ts",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "src/public/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "src/index.ts"
+    },
+    {
+      "src": "/proxy/(.*)",
+      "dest": "src/index.ts"
+    },
+    {
+      "src": "/styles.css",
+      "dest": "/src/public/styles.css"
+    },
+    {
+      "src": "/app.js",
+      "dest": "/src/public/app.js"
+    },
+    {
+      "src": "/player.js",
+      "dest": "/src/public/player.js"
+    },
+    {
+      "src": "/anime-details.js",
+      "dest": "/src/public/anime-details.js"
+    },
+    {
+      "src": "/anime/(.*)",
+      "dest": "/src/public/anime.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/src/public/index.html"
     }
   ]
 } 
