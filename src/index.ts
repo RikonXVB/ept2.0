@@ -378,12 +378,32 @@ function getApiHeaders() {
   };
 }
 
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://ept2-0-production.up.railway.app', // Замените на ваш домен
+  'https://your-domain.up.railway.app' // Добавьте все нужные домены
+];
+
 const app = new Elysia()
   .use(cors({
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: (origin) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return true;
+      }
+      return false;
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
-    credentials: true
+    allowedHeaders: [
+      'Content-Type', 
+      'Authorization', 
+      'Accept', 
+      'Origin', 
+      'X-Requested-With',
+      'Api-Version',
+      'Range'
+    ],
+    credentials: true,
+    maxAge: 86400 // 24 часа
   }))
   .use(html())
   .use(staticPlugin({

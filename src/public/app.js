@@ -1,6 +1,6 @@
 const API_BASE_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:3000/api'
-    : 'https://ваш-домен-на-railway.up.railway.app/api';
+    : `https://${window.location.hostname}/api`;
 
 let player = null;
 let currentAnime = null;
@@ -230,7 +230,7 @@ async function applyFilters(page = 1) {
     }
 }
 
-// Обновим загрузку фильтров
+// Обновим загр��зку фильтров
 document.addEventListener('DOMContentLoaded', () => {
     const genreFilter = document.getElementById('genreFilter');
     const yearFilter = document.getElementById('yearFilter');
@@ -359,3 +359,19 @@ window.addEventListener('scroll', () => {
 
 // Инициализация первой загрузки
 loadPopularAnime(1); 
+
+// Функция для получения заголовков API
+function getApiHeaders() {
+  return {
+    'Accept': 'application/json',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    'Origin': window.location.origin,
+    'Referer': window.location.origin,
+    'Api-Version': '3.0'
+  };
+}
+
+// Используйте эти заголовки во всех fetch запросах
+fetch(`${API_BASE_URL}/...`, {
+  headers: getApiHeaders()
+}) 
