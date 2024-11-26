@@ -337,19 +337,36 @@ async function proxyVideo(url: string) {
   }
 }
 
-// Обновим функцию makeRequest
+// Обновим функцию для получения заголовков API
+function getApiHeaders() {
+  return {
+    'Accept': 'application/json',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    'Origin': 'https://www.anilibria.tv',
+    'Referer': 'https://www.anilibria.tv/',
+    'Api-Version': '3.0',
+    'Connection': 'keep-alive',
+    'Cache-Control': 'no-cache',
+    'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
+    'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"Windows"',
+    'Sec-Fetch-Dest': 'empty',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Site': 'cross-site',
+    'Host': 'api.anilibria.tv',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'DNT': '1'
+  };
+}
+
+// Также обновим функцию makeRequest
 async function makeRequest(url: string) {
   try {
     const response = await fetch(url, {
       // @ts-ignore
       agent: proxyAgent,
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Origin': 'https://www.anilibria.tv',
-        'Referer': 'https://www.anilibria.tv/',
-        'Api-Version': '3.0'
-      }
+      headers: getApiHeaders()
     });
 
     if (!response.ok) {
@@ -363,21 +380,6 @@ async function makeRequest(url: string) {
   }
 }
 
-// Создадим функцию для получения стандартных заголовков API
-function getApiHeaders() {
-  return {
-    'Accept': 'application/json',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-    'Origin': 'https://www.anilibria.tv',
-    'Referer': 'https://www.anilibria.tv/',
-    'Api-Version': '3.0',
-    'Connection': 'keep-alive',
-    'Cache-Control': 'no-cache',
-    'Pragma': 'no-cache',
-    'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
-  };
-}
-
 const allowedOrigins = [
   'http://localhost:3000',
   'https://ept2-0-production.up.railway.app', // Замените на ваш домен
@@ -386,12 +388,7 @@ const allowedOrigins = [
 
 const app = new Elysia()
   .use(cors({
-    origin: (origin) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        return true;
-      }
-      return false;
-    },
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type', 
@@ -402,8 +399,7 @@ const app = new Elysia()
       'Api-Version',
       'Range'
     ],
-    credentials: true,
-    maxAge: 86400 // 24 часа
+    credentials: true
   }))
   .use(html())
   .use(staticPlugin({
@@ -427,10 +423,15 @@ const app = new Elysia()
     .get("/anime/popular", async ({ query }) => {
       try {
         const page = parseInt(query.page as string) || 1;
-        const data = await getAnilibriaList({ 
-          limit: 20,
-          page: page
+        const response = await fetch(`${ANILIBRIA_API}/title/updates?limit=20&page=${page}`, {
+          headers: getApiHeaders()
         });
+        
+        if (!response.ok) {
+          throw new Error(`API ответил с ошибкой: ${response.status}`);
+        }
+
+        const data = await response.json();
         
         return {
           results: data.list.map((anime: any) => ({
@@ -511,7 +512,10 @@ const app = new Elysia()
     .get("/anime/:id", async ({ params: { id } }) => {
       try {
         const response = await fetch(`${ANILIBRIA_API}/title?id=${id}`, {
-          headers: getApiHeaders()
+          method: 'GET',
+          mode: 'cors',
+          headers: getApiHeaders(),
+          credentials: 'omit'
         });
 
         if (!response.ok) {
@@ -555,13 +559,10 @@ const app = new Elysia()
     .get("/anime/:id/episode/:episode", async ({ params: { id, episode } }) => {
       try {
         const response = await fetch(`${ANILIBRIA_API}/title?id=${id}`, {
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Origin': 'https://www.anilibria.tv',
-            'Referer': 'https://www.anilibria.tv/',
-            'Api-Version': '3.0'
-          }
+          method: 'GET',
+          mode: 'cors',
+          headers: getApiHeaders(),
+          credentials: 'omit'
         });
 
         if (!response.ok) {
@@ -748,7 +749,7 @@ const app = new Elysia()
         const data = await response.json();
         return { years: data };
       } catch (error) {
-        console.error('Ошибка получения годов:', error);
+        console.error('Оибка получения годов:', error);
         return { error: true, message: 'Ошибка при загрузке годов' };
       }
     })

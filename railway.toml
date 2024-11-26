@@ -10,6 +10,5 @@ restartPolicyType = "on_failure"
 
 [env]
 PORT = "3000"
-CORS_ORIGIN = "*"
 NODE_ENV = "production"
   
