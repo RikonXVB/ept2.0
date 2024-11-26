@@ -363,8 +363,28 @@ async function makeRequest(url: string) {
   }
 }
 
+// Создадим функцию для получения стандартных заголовков API
+function getApiHeaders() {
+  return {
+    'Accept': 'application/json',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    'Origin': 'https://www.anilibria.tv',
+    'Referer': 'https://www.anilibria.tv/',
+    'Api-Version': '3.0',
+    'Connection': 'keep-alive',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache',
+    'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
+  };
+}
+
 const app = new Elysia()
-  .use(cors())
+  .use(cors({
+    origin: process.env.CORS_ORIGIN || '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+    credentials: true
+  }))
   .use(html())
   .use(staticPlugin({
     assets: 'src/public',
@@ -471,19 +491,11 @@ const app = new Elysia()
     .get("/anime/:id", async ({ params: { id } }) => {
       try {
         const response = await fetch(`${ANILIBRIA_API}/title?id=${id}`, {
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Origin': 'https://www.anilibria.tv',
-            'Referer': 'https://www.anilibria.tv/',
-            'Connection': 'keep-alive',
-            'Cache-Control': 'no-cache',
-            'Api-Version': '3.0'
-          }
+          headers: getApiHeaders()
         });
 
         if (!response.ok) {
-          throw new Error(`API тветил с ошибкой: ${response.status}`);
+          throw new Error(`API ответил с ошибкой: ${response.status}`);
         }
 
         const anime = await response.json();
@@ -585,7 +597,7 @@ const app = new Elysia()
     })
     .get("/proxy/video/*", async ({ request }) => {
       try {
-        // По��учаем полный URL запроса
+        // Поучаем полный URL запроса
         const fullUrl = request.url;
         console.log('Full request URL:', fullUrl);
 

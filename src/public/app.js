@@ -1,4 +1,6 @@
-const API_BASE_URL = '/api';
+const API_BASE_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:3000/api'
+    : 'https://ваш-домен-на-railway.up.railway.app/api';
 
 let player = null;
 let currentAnime = null;
@@ -18,7 +20,7 @@ async function loadPopularAnime(page = 1) {
     const container = document.querySelector('.anime-grid');
     
     try {
-        const response = await fetch(`/api/anime/popular?page=${page}`);
+        const response = await fetch(`${API_BASE_URL}/anime/popular?page=${page}`);
         const data = await response.json();
         
         if (data.error) {
@@ -67,7 +69,7 @@ function searchAnime() {
         </div>
     `;
 
-    fetch(`/api/anime/search/${encodeURIComponent(query)}`)
+    fetch(`${API_BASE_URL}/anime/search/${encodeURIComponent(query)}`)
         .then(response => response.json())
         .then(data => {
             if (data.error) {
