@@ -120,11 +120,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
 
-        // Загружаем начальные данные
-        await loadPopularAnime(1);
-        
         // Инициализируем фильтры
         await initializeFilters();
+        
+        // Загружаем начальные данные
+        await loadPopularAnime(1);
     } catch (error) {
         console.error('Initialization error:', error);
     }
@@ -161,7 +161,7 @@ function displayResults(results) {
 }
 
 // Загружаем популярные аниме при загрузке страницы
-document.addEventListener('DOMContentLoaded', loadPopularAnime); 
+// document.addEventListener('DOMContentLoaded', loadPopularAnime); 
 
 async function applyFilters(page = 1) {
     if (isFilterLoading || (page > 1 && !hasMoreFilterResults)) return;
@@ -235,14 +235,14 @@ async function applyFilters(page = 1) {
     }
 }
 
-// Обновим загрузку фильтров
-document.addEventListener('DOMContentLoaded', async () => {
+// Добавим функцию инициализации фильтров
+async function initializeFilters() {
     const genreFilter = document.getElementById('genreFilter');
     const yearFilter = document.getElementById('yearFilter');
     const seasonFilter = document.getElementById('seasonFilter');
 
     try {
-        // Загрузим начальные значения фильтров
+        // Загружаем жанры
         const response = await fetchWithErrorHandling(`${API_BASE_URL}/anime/genres`);
         const data = await response.json();
         if (data && Array.isArray(data.genres)) {
@@ -251,34 +251,35 @@ document.addEventListener('DOMContentLoaded', async () => {
                     `<option value="${genre}">${genre}</option>`
                 ).join('');
         }
+
+        // Создаем список годов
+        const currentYear = new Date().getFullYear();
+        const years = Array.from({ length: currentYear - 1990 + 1 }, (_, i) => currentYear - i);
+        yearFilter.innerHTML = '<option value="">Все годы</option>' + 
+            years.map(year => `<option value="${year}">${year}</option>`).join('');
+
+        // Создаем список сезонов
+        const seasons = [
+            { code: 1, name: 'Зима' },
+            { code: 2, name: 'Весна' },
+            { code: 3, name: 'Лето' },
+            { code: 4, name: 'Осень' }
+        ];
+        
+        seasonFilter.innerHTML = '<option value="">Все сезоны</option>' + 
+            seasons.map(season => 
+                `<option value="${season.code}">${season.name}</option>`
+            ).join('');
+
+        // Добавляем обработчики
+        genreFilter?.addEventListener('change', () => applyFilters(1));
+        yearFilter?.addEventListener('change', () => applyFilters(1));
+        seasonFilter?.addEventListener('change', () => applyFilters(1));
+
     } catch (error) {
-        console.error('Ошибка загрузки жанров:', error);
+        console.error('Error initializing filters:', error);
     }
-
-    // Создадим список годов от 1990 до текущего года
-    const currentYear = new Date().getFullYear();
-    const years = Array.from({ length: currentYear - 1990 + 1 }, (_, i) => currentYear - i);
-    yearFilter.innerHTML = '<option value="">Все годы</option>' + 
-        years.map(year => `<option value="${year}">${year}</option>`).join('');
-
-    // Обновим список сезонов
-    const seasons = [
-        { code: 1, name: 'Зима' },
-        { code: 2, name: 'Весна' },
-        { code: 3, name: 'Лето' },
-        { code: 4, name: 'Осень' }
-    ];
-    
-    seasonFilter.innerHTML = '<option value="">Все сезоны</option>' + 
-        seasons.map(season => 
-            `<option value="${season.code}">${season.name}</option>`
-        ).join('');
-
-    // Добавим обработчики изменения фильтров
-    genreFilter.addEventListener('change', () => applyFilters(1));
-    yearFilter.addEventListener('change', () => applyFilters(1));
-    seasonFilter.addEventListener('change', () => applyFilters(1));
-});
+}
 
 // Обновим функцию updateFilterOptions для годов
 function updateFilterOptions() {
