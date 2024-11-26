@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "scripts": {
     "start": "bun run src/index.ts",
-    "dev": "bun --watch run src/index.ts"
+    "dev": "bun --watch run src/index.ts",
+    "vercel-build": "bun run src/build-check.ts",
+    "build": "bun run src/build-check.ts"
   },
   "dependencies": {
     "@elysiajs/cors": "latest",
@@ -16,6 +18,10 @@
     "socks-proxy-agent": "^8.0.4"
   },
   "devDependencies": {
-    "bun-types": "latest"
+    "bun-types": "latest",
+    "@vercel/node": "latest"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

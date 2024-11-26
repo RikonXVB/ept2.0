@@ -106,6 +106,54 @@ class AnimePlayer {
                 loadingIndicator.style.display = 'none';
             }
         });
+
+        // Добавляем обработчики для автоскрытия элементов управления
+        let hideControlsTimeout;
+        const controls = this.container.querySelector('.controls');
+        
+        const showControls = () => {
+            if (controls) {
+                controls.style.opacity = '1';
+                clearTimeout(hideControlsTimeout);
+            }
+        };
+
+        const hideControls = () => {
+            if (controls && document.fullscreenElement) {
+                hideControlsTimeout = setTimeout(() => {
+                    controls.style.opacity = '0';
+                }, 2000); // Скрываем через 2 секунды неактивности
+            }
+        };
+
+        // Показываем элементы управления при движении мыши
+        this.container.addEventListener('mousemove', () => {
+            showControls();
+            hideControls();
+        });
+
+        // Показываем при наведении на элементы управления
+        controls.addEventListener('mouseenter', () => {
+            showControls();
+            clearTimeout(hideControlsTimeout);
+        });
+
+        // Скрываем при уходе курсора с плеера
+        this.container.addEventListener('mouseleave', () => {
+            if (document.fullscreenElement) {
+                hideControls();
+            }
+        });
+
+        // Обновляем состояние при входе/выходе из полноэкранного режима
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) {
+                showControls();
+                clearTimeout(hideControlsTimeout);
+            } else {
+                hideControls();
+            }
+        });
     }
 
     loadSource(sources) {

@@ -6,6 +6,7 @@ import { staticPlugin } from '@elysiajs/static';
 import { html } from '@elysiajs/html';
 import { join } from "path";
 import { SocksProxyAgent } from 'socks-proxy-agent';
+import { animeRoutes } from './routes/anime';
 
 const ANILIST_API = 'https://graphql.anilist.co';
 const ANIWATCH_API = 'https://aniwatch-api-v1-0.onrender.com/api';
@@ -341,9 +342,9 @@ async function proxyVideo(url: string) {
 function getApiHeaders() {
   return {
     'Accept': 'application/json',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-    'Origin': 'https://www.anilibria.tv',
-    'Referer': 'https://www.anilibria.tv/',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Origin': 'https://api.anilibria.tv',
+    'Referer': 'https://api.anilibria.tv/',
     'Api-Version': '3.0',
     'Connection': 'keep-alive',
     'Cache-Control': 'no-cache',
@@ -353,23 +354,24 @@ function getApiHeaders() {
     'sec-ch-ua-platform': '"Windows"',
     'Sec-Fetch-Dest': 'empty',
     'Sec-Fetch-Mode': 'cors',
-    'Sec-Fetch-Site': 'cross-site',
-    'Host': 'api.anilibria.tv',
-    'Accept-Encoding': 'gzip, deflate, br',
-    'DNT': '1'
+    'Sec-Fetch-Site': 'same-site'
   };
 }
 
-// Также обновим функцию makeRequest
+// Обновим функцию makeRequest
 async function makeRequest(url: string) {
   try {
     const response = await fetch(url, {
       // @ts-ignore
       agent: proxyAgent,
-      headers: getApiHeaders()
+      headers: getApiHeaders(),
+      mode: 'cors',
+      cache: 'no-cache'
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Ответ сервера:', errorText);
       throw new Error(`API ответил с ошибкой: ${response.status}`);
     }
 
@@ -406,6 +408,7 @@ const app = new Elysia()
     assets: 'src/public',
     prefix: '/'
   }))
+  .use(animeRoutes)
   .get("/", () => {
     const filePath = join(import.meta.dir, "public", "index.html");
     const file = Bun.file(filePath);
@@ -506,53 +509,6 @@ const app = new Elysia()
           error: true, 
           message: error instanceof Error ? error.message : 'Ошибка при поиске',
           results: [] 
-        };
-      }
-    })
-    .get("/anime/:id", async ({ params: { id } }) => {
-      try {
-        const response = await fetch(`${ANILIBRIA_API}/title?id=${id}`, {
-          method: 'GET',
-          mode: 'cors',
-          headers: getApiHeaders(),
-          credentials: 'omit'
-        });
-
-        if (!response.ok) {
-          throw new Error(`API ответил с ошибкой: ${response.status}`);
-        }
-
-        const anime = await response.json();
-        
-        return {
-          info: {
-            title: anime.names.ru,
-            title_en: anime.names.en,
-            title_japanese: anime.names.alternative,
-            synopsis: anime.description,
-            image: anime.posters?.original?.url ? `${ANILIBRIA_CDN}${anime.posters.original.url}` : null,
-            type: anime.type?.full_string || '',
-            episodes: anime.type?.episodes || '?',
-            status: anime.status?.string || 'Неизвестно',
-            year: anime.season?.year,
-            genres: anime.genres || [],
-            season: {
-              year: anime.season?.year,
-              string: anime.season?.string
-            }
-          },
-          episodes: Object.entries(anime.player?.list || {}).map(([episodeNum, episodeData]: [string, any]) => ({
-            id: episodeNum,
-            title: episodeData.name,
-            episode: parseInt(episodeNum),
-            preview: episodeData.preview ? `${anime.player.host || 'cache.libria.fun'}${episodeData.preview}` : null
-          })).sort((a, b) => a.episode - b.episode)
-        };
-      } catch (error) {
-        console.error("Anime info error:", error);
-        return { 
-          error: true, 
-          message: error instanceof Error ? error.message : 'Ошибка при загрузке информации об аниме'
         };
       }
     })
