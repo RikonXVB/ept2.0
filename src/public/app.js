@@ -1,6 +1,6 @@
 const API_BASE_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:3000/api'
-    : `${window.location.protocol}//${window.location.host}/api`;
+    : 'https://ept20-production.up.railway.app/api';
 
 let player = null;
 let currentAnime = null;
@@ -106,22 +106,28 @@ async function searchAnime() {
 }
 
 // Добавляем обработчики событий для поиска
-document.addEventListener('DOMContentLoaded', () => {
-    const searchInput = document.getElementById('searchInput');
-    const searchButton = document.querySelector('.search-button');
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // Инициализируем поиск
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.querySelector('.search-button');
 
-    // Поиск при воде текста
-    searchInput.addEventListener('input', searchAnime);
+        searchInput?.addEventListener('input', searchAnime);
+        searchButton?.addEventListener('click', searchAnime);
+        searchInput?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchAnime();
+            }
+        });
 
-    // Поиск при нажатии на кнопку
-    searchButton.addEventListener('click', searchAnime);
-
-    // Поиск при нажатии Enter
-    searchInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            searchAnime();
-        }
-    });
+        // Загружаем начальные данные
+        await loadPopularAnime(1);
+        
+        // Инициализируем фильтры
+        await initializeFilters();
+    } catch (error) {
+        console.error('Initialization error:', error);
+    }
 });
 
 function displayResults(results) {
@@ -362,30 +368,50 @@ loadPopularAnime(1);
 
 // Функция для получения заголовков API
 function getApiHeaders() {
-    return {
+    const headers = {
         'Accept': 'application/json',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         'Origin': 'https://www.anilibria.tv',
         'Referer': 'https://www.anilibria.tv/',
         'Api-Version': '3.0',
         'Connection': 'keep-alive',
-        'Cache-Control': 'no-cache'
+        'Cache-Control': 'no-cache',
+        'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
     };
+
+    // Добавляем CORS заголовки если не локальный хост
+    if (window.location.hostname !== 'localhost') {
+        headers['Access-Control-Allow-Origin'] = '*';
+        headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS';
+        headers['Access-Control-Allow-Headers'] = 'Content-Type, Api-Version';
+    }
+
+    return headers;
 }
 
 // Добавим обработку ошибок для всех fetch запросов
 async function fetchWithErrorHandling(url, options = {}) {
     try {
+        console.log('Fetching URL:', url); // Для отладки
+        
         const response = await fetch(url, {
             ...options,
             headers: {
                 ...getApiHeaders(),
                 ...(options.headers || {})
-            }
+            },
+            mode: 'cors',
+            credentials: 'omit'
         });
 
         if (!response.ok) {
-            throw new Error(`API ответил с ошибкой: ${response.status}`);
+            const errorText = await response.text();
+            console.error('API Error:', {
+                status: response.status,
+                statusText: response.statusText,
+                errorText
+            });
+            throw new Error(`API ответил с ошибкой: ${response.status} ${errorText}`);
         }
 
         return response;
@@ -393,9 +419,4 @@ async function fetchWithErrorHandling(url, options = {}) {
         console.error('Fetch error:', error);
         throw error;
     }
-}
-
-// Используйте эти заголовки во всех fetch запросах
-fetch(`${API_BASE_URL}/...`, {
-  headers: getApiHeaders()
-}) 
+} 
