@@ -1,0 +1,21 @@
+{
+  "name": "anime-streaming",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "dev": "bun --watch run src/index.ts"
+  },
+  "dependencies": {
+    "@elysiajs/cors": "latest",
+    "@elysiajs/html": "latest",
+    "@elysiajs/static": "latest",
+    "@types/node-fetch": "^2.6.12",
+    "elysia": "latest",
+    "https-proxy-agent": "^7.0.5",
+    "node-fetch": "2",
+    "socks-proxy-agent": "^8.0.4"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  }
+}
