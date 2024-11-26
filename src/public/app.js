@@ -183,7 +183,7 @@ async function applyFilters(page = 1) {
         if (genreFilter) params.append('genres', genreFilter);
         params.append('page', page.toString());
 
-        const response = await fetch(`${API_BASE_URL}/anime/filter?${params}`);
+        const response = await fetchWithErrorHandling(`${API_BASE_URL}/anime/filter?${params}`);
         const data = await response.json();
 
         if (data.error) {
@@ -229,24 +229,25 @@ async function applyFilters(page = 1) {
     }
 }
 
-// Обновим загрзку фильтров
-document.addEventListener('DOMContentLoaded', () => {
+// Обновим загрузку фильтров
+document.addEventListener('DOMContentLoaded', async () => {
     const genreFilter = document.getElementById('genreFilter');
     const yearFilter = document.getElementById('yearFilter');
     const seasonFilter = document.getElementById('seasonFilter');
 
-    // Загрузим начальные значения фильтров
-    fetch(`${API_BASE_URL}/anime/genres`)
-        .then(response => response.json())
-        .then(data => {
-            if (data && Array.isArray(data.genres)) {
-                genreFilter.innerHTML = '<option value="">Все жанры</option>' + 
-                    data.genres.sort().map(genre => 
-                        `<option value="${genre}">${genre}</option>`
-                    ).join('');
-            }
-        })
-        .catch(error => console.error('Ошибка загрузки жанров:', error));
+    try {
+        // Загрузим начальные значения фильтров
+        const response = await fetchWithErrorHandling(`${API_BASE_URL}/anime/genres`);
+        const data = await response.json();
+        if (data && Array.isArray(data.genres)) {
+            genreFilter.innerHTML = '<option value="">Все жанры</option>' + 
+                data.genres.sort().map(genre => 
+                    `<option value="${genre}">${genre}</option>`
+                ).join('');
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки жанров:', error);
+    }
 
     // Создадим список годов от 1990 до текущего года
     const currentYear = new Date().getFullYear();
@@ -256,7 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Обновим список сезонов
     const seasons = [
-        { code: 1, name: 'Зма' },
+        { code: 1, name: 'Зима' },
         { code: 2, name: 'Весна' },
         { code: 3, name: 'Лето' },
         { code: 4, name: 'Осень' }
