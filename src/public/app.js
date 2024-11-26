@@ -20,14 +20,7 @@ async function loadPopularAnime(page = 1) {
     const container = document.querySelector('.anime-grid');
     
     try {
-        const response = await fetch(`${API_BASE_URL}/anime/popular?page=${page}`, {
-            headers: getApiHeaders()
-        });
-        
-        if (!response.ok) {
-            throw new Error(`API ответил с ошибкой: ${response.status}`);
-        }
-
+        const response = await fetchWithErrorHandling(`${API_BASE_URL}/anime/popular?page=${page}`);
         const data = await response.json();
         
         if (data.error) {
@@ -60,7 +53,7 @@ async function loadPopularAnime(page = 1) {
 
 let searchTimeout;
 
-function searchAnime() {
+async function searchAnime() {
     const query = document.getElementById('searchInput').value.trim();
     if (!query) {
         loadPopularAnime();
@@ -75,41 +68,41 @@ function searchAnime() {
         </div>
     `;
 
-    fetch(`${API_BASE_URL}/anime/search/${encodeURIComponent(query)}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                throw new Error(data.message);
-            }
+    try {
+        const response = await fetchWithErrorHandling(`${API_BASE_URL}/anime/search/${encodeURIComponent(query)}`);
+        const data = await response.json();
 
-            if (data.results && data.results.length > 0) {
-                container.innerHTML = '';
-                data.results.forEach(anime => {
-                    const card = createAnimeCard(anime);
-                    container.appendChild(card);
-                });
-            } else {
-                container.innerHTML = `
-                    <div class="message-container">
-                        <div class="error">
-                            <i class="fas fa-search"></i>
-                            Ничего не найдено
-                        </div>
-                    </div>
-                `;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
+        if (data.error) {
+            throw new Error(data.message);
+        }
+
+        if (data.results && data.results.length > 0) {
+            container.innerHTML = '';
+            data.results.forEach(anime => {
+                const card = createAnimeCard(anime);
+                container.appendChild(card);
+            });
+        } else {
             container.innerHTML = `
                 <div class="message-container">
                     <div class="error">
-                        <i class="fas fa-exclamation-circle"></i>
-                        Ошибка при поиске: ${error.message}
+                        <i class="fas fa-search"></i>
+                        Ничего не найдено
                     </div>
                 </div>
             `;
-        });
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        container.innerHTML = `
+            <div class="message-container">
+                <div class="error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Ошибка при поиске: ${error.message}
+                </div>
+            </div>
+        `;
+    }
 }
 
 // Добавляем обработчики событий для поиска
@@ -263,7 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Обновим список сезонов
     const seasons = [
-        { code: 1, name: 'З��ма' },
+        { code: 1, name: 'Зма' },
         { code: 2, name: 'Весна' },
         { code: 3, name: 'Лето' },
         { code: 4, name: 'Осень' }
@@ -371,9 +364,10 @@ function getApiHeaders() {
     return {
         'Accept': 'application/json',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Origin': window.location.origin,
-        'Referer': window.location.origin,
+        'Origin': 'https://www.anilibria.tv',
+        'Referer': 'https://www.anilibria.tv/',
         'Api-Version': '3.0',
+        'Connection': 'keep-alive',
         'Cache-Control': 'no-cache'
     };
 }
